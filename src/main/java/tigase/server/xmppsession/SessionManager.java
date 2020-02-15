@@ -179,6 +179,8 @@ public class SessionManager
 	private SMResourceConnection smResourceConnection = null;
 	@ConfigField(desc = "Default processors threads pool size", alias = SessionManagerConfig.SM_THREADS_POOL_PROP_KEY)
 	private String smThreadsPool = SessionManagerConfig.SM_THREADS_POOL_PROP_VAL;
+	@Inject(nullAllowed = true)
+	protected MessageArchive messageArchive = null;
 	private StaleConnectionCloser staleConnectionCloser = new StaleConnectionCloser();
 	private Map<String, XMPPStopListenerIfc> stopListeners = new ConcurrentHashMap<String, XMPPStopListenerIfc>(10);
 	private int tIdx = 0;
@@ -453,6 +455,10 @@ public class SessionManager
 			// No more processing is needed for command packet
 			return;
 		}    // end of if (pc.isCommand())
+
+		if (messageArchive != null) {
+			messageArchive.generateStableId(packet);
+		}
 
 		XMPPResourceConnection conn = getXMPPResourceConnection(packet);
 
@@ -2819,5 +2825,14 @@ public class SessionManager
 				return !workingSet.isEmpty();
 			}
 		}
+	}
+	
+	public interface MessageArchive {
+
+		void generateStableId(Packet packet);
+
+		boolean willArchive(Packet packet, XMPPResourceConnection session) throws NotAuthorizedException;
+
+		void addStableId(Packet packet, XMPPResourceConnection session);
 	}
 }
